@@ -2,8 +2,9 @@ package dataloader
 
 import (
 	"errors"
+	"log"
 	"testing"
-	// "time"
+	"time"
 )
 
 func reverseString(str string) string {
@@ -31,7 +32,7 @@ func alwaysFailGetter(input []string) (map[string]string, map[string]error) {
 }
 
 func TestQueryBatcherSuccess(t *testing.T) {
-	batcher := NewQueryBatcher(alwaysSucceedGetter, 3, 10)
+	batcher := NewQueryBatcher(alwaysSucceedGetter, 1, 1)
 	defer batcher.Close()
 
 	key := "lorem"
@@ -40,17 +41,91 @@ func TestQueryBatcherSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	if reverseString(result) != key {
-		t.Fatal("batcher did not return the expected result for the query")
+		t.Fatal("QueryBatcher did not return the expected result for the query")
 	}
 }
 
 func TestQueryBatcherFail(t *testing.T) {
-	batcher := NewQueryBatcher(alwaysFailGetter, 3, 10)
+	batcher := NewQueryBatcher(alwaysFailGetter, 1, 1)
 	defer batcher.Close()
 
 	key := "lorem"
 	_, err := batcher.Load(key)
 	if reverseString(err.Error()) != key {
-		t.Fatal("batcher did not return the expected error for the query")
+		t.Fatal("QueryBatcher did not return the expected error for the query")
+	}
+}
+
+func TestQueryBatcherSuccessMany(t *testing.T) {
+	calls := 0
+	keysCount := 0
+	countCallsGetter := func(input []int) (map[int]int, map[int]error) {
+		calls += 1
+
+		time.Sleep(time.Second)
+
+		result := map[int]int{}
+		for _, value := range input {
+			keysCount++
+			result[value] = -value
+		}
+		return result, nil
+	}
+
+	batcher := NewQueryBatcher(countCallsGetter, 1, 10)
+	defer batcher.Close()
+
+	maxCalls := 30
+	for i := 1; i < maxCalls; i++ {
+		go batcher.Load(i)
+	}
+	batcher.Load(maxCalls)
+
+	time.Sleep(time.Second * 5)
+
+	// due to the intricacies of goroutines and channels, as well as the speed of the actual hardware, the theoretical best-case performance of 4 calls may not always be reached
+	if calls > (maxCalls / 5) { // 6
+		t.Fatal("QueryBatcher did not batch the queries, made", calls, "calls")
+	}
+
+	if keysCount != maxCalls {
+		t.Fatal("QueryBatcher did not call the getter with all keys, used", keysCount, "keys")
+	}
+}
+
+func TestQueryBatcherSuccessMultithread(t *testing.T) {
+	calls := 0
+	keysCount := 0
+	countCallsGetter := func(input []int) (map[int]int, map[int]error) {
+		calls += 1
+
+		time.Sleep(time.Second)
+
+		result := map[int]int{}
+		for _, value := range input {
+			keysCount++
+			result[value] = -value
+		}
+		return result, nil
+	}
+
+	batcher := NewQueryBatcher(countCallsGetter, 3, 10)
+	defer batcher.Close()
+
+	maxCalls := 50
+	for i := 1; i < maxCalls; i++ {
+		go batcher.Load(i)
+	}
+	batcher.Load(maxCalls)
+
+	time.Sleep(time.Second * 5)
+
+	log.Println(calls)
+	if calls > (maxCalls / 2) {
+		t.Fatal("QueryBatcher did not batch the queries, made", calls, "calls")
+	}
+
+	if keysCount != maxCalls {
+		t.Fatal("QueryBatcher did not call the getter with all keys, used", keysCount, "keys")
 	}
 }
