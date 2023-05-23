@@ -2,7 +2,6 @@ package dataloader
 
 import (
 	"errors"
-	"log"
 	"testing"
 	"time"
 )
@@ -120,7 +119,6 @@ func TestQueryBatcherSuccessMultithread(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 
-	log.Println(calls)
 	if calls > (maxCalls / 2) {
 		t.Fatal("QueryBatcher did not batch the queries, made", calls, "calls")
 	}

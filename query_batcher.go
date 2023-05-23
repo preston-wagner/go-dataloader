@@ -30,12 +30,18 @@ func NewQueryBatcher[KEY_TYPE comparable, VALUE_TYPE any](getter Getter[KEY_TYPE
 }
 
 func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) Load(key KEY_TYPE) (VALUE_TYPE, error) {
+	return batcher.LoadPromise(key).Await()
+}
+
+func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) LoadPromise(key KEY_TYPE) *unicycle.Promise[VALUE_TYPE] {
 	promise := unicycle.NewPromise[VALUE_TYPE]()
-	batcher.incoming <- query[KEY_TYPE, VALUE_TYPE]{
-		key:     key,
-		promise: promise,
-	}
-	return promise.Await()
+	go func() {
+		batcher.incoming <- query[KEY_TYPE, VALUE_TYPE]{
+			key:     key,
+			promise: promise,
+		}
+	}()
+	return promise
 }
 
 func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize int) {
