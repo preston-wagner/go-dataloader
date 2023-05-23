@@ -1,32 +1,28 @@
 package unicycle
 
-import (
-	"encoding/json"
-	"io"
-)
-
-// FetchJson simplifies the common task of fetching some JSON data and returning it as a struct
+// FetchJson simplifies the common task of making a HTTP request to fetch some JSON data and returning it as a struct
 func FetchJson[OUTPUT_TYPE any](rawUrl string, options FetchOptions) (OUTPUT_TYPE, error) {
-	var output OUTPUT_TYPE
 	response, err := Fetch(rawUrl, options)
 	if err != nil {
-		return output, err
+		return ZeroValue[OUTPUT_TYPE](), err
 	}
 
 	ok, err := ResponseOk(response)
 	if !ok {
-		return output, err
+		return ZeroValue[OUTPUT_TYPE](), err
 	}
 
-	responseBodyBytes, err := io.ReadAll(response.Body)
+	output, err := ReadJson[OUTPUT_TYPE](response.Body)
+	return output, newFetchError(err, response)
+}
+
+// Like FetchJson, but attempts to parse to the json struct regardless of status code
+func FetchJsonAlways[OUTPUT_TYPE any](rawUrl string, options FetchOptions) (OUTPUT_TYPE, error) {
+	response, err := Fetch(rawUrl, options)
 	if err != nil {
-		return output, newFetchError(err, response)
+		return ZeroValue[OUTPUT_TYPE](), err
 	}
 
-	err = json.Unmarshal(responseBodyBytes, &output)
-	if err != nil {
-		return output, newFetchError(err, response)
-	}
-
-	return output, nil
+	output, err := ReadJson[OUTPUT_TYPE](response.Body)
+	return output, newFetchError(err, response)
 }

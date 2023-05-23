@@ -23,11 +23,11 @@ type FetchError struct {
 	Err      error
 }
 
-func (e *FetchError) Error() string {
+func (e FetchError) Error() string {
 	return e.Err.Error()
 }
 
-func (e *FetchError) Unwrap() error {
+func (e FetchError) Unwrap() error {
 	return e.Err
 }
 
@@ -65,8 +65,11 @@ func ResponseOk(response *http.Response) (bool, error) {
 	}
 }
 
-func newFetchError(err error, response *http.Response) *FetchError {
-	return &FetchError{
+func newFetchError(err error, response *http.Response) error {
+	if err == nil {
+		return nil
+	}
+	return FetchError{
 		Err:      err,
 		Response: response,
 	}
@@ -74,8 +77,7 @@ func newFetchError(err error, response *http.Response) *FetchError {
 
 func LogPossibleFetchError(err error) bool {
 	log.Println(err)
-	var fetchError *FetchError
-	if errors.As(err, &fetchError) {
+	if fetchError := ErrorAs[FetchError](err); fetchError != nil {
 		LogResponseDetails(fetchError.Response)
 		return true
 	}
