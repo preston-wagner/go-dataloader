@@ -1,4 +1,4 @@
-module dataloader
+module github.com/preston-wagner/go-dataloader
 
 go 1.19
 
