@@ -1,6 +1,8 @@
 package dataloader
 
 import (
+	"context"
+
 	"github.com/preston-wagner/unicycle"
 )
 
@@ -8,14 +10,19 @@ import (
 type Getter[KEY_TYPE comparable, VALUE_TYPE any] func([]KEY_TYPE) (map[KEY_TYPE]VALUE_TYPE, map[KEY_TYPE]error)
 
 type QueryBatcher[KEY_TYPE comparable, VALUE_TYPE any] struct {
-	incoming chan query[KEY_TYPE, VALUE_TYPE]
-	ready    chan batch[KEY_TYPE, VALUE_TYPE]
+	incoming  chan query[KEY_TYPE, VALUE_TYPE]
+	ready     chan batch[KEY_TYPE, VALUE_TYPE]
+	ctx       context.Context
+	canceller func()
 }
 
 func NewQueryBatcher[KEY_TYPE comparable, VALUE_TYPE any](getter Getter[KEY_TYPE, VALUE_TYPE], maxConcurrentBatches, maxBatchSize int) *QueryBatcher[KEY_TYPE, VALUE_TYPE] {
+	ctx, canceller := context.WithCancel(context.Background())
 	batcher := QueryBatcher[KEY_TYPE, VALUE_TYPE]{
-		incoming: make(chan query[KEY_TYPE, VALUE_TYPE]),
-		ready:    make(chan batch[KEY_TYPE, VALUE_TYPE]),
+		incoming:  make(chan query[KEY_TYPE, VALUE_TYPE]),
+		ready:     make(chan batch[KEY_TYPE, VALUE_TYPE]),
+		ctx:       ctx,
+		canceller: canceller,
 	}
 	go batcher.batchRequests(maxBatchSize)
 	go batcher.makeRequests(getter, maxConcurrentBatches)
@@ -39,8 +46,13 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize in
 	for {
 		if len(pendingBatch) == 0 {
 			// if current batch is empty, just wait on new queries
-			incomingQuery := <-batcher.incoming
-			pendingBatch.addToBatch(incomingQuery)
+			select {
+			case incomingQuery := <-batcher.incoming:
+				pendingBatch.addToBatch(incomingQuery)
+			case <-batcher.ctx.Done():
+				batcher.cleanup()
+				return
+			}
 		} else if len(pendingBatch) < maxBatchSize {
 			// add new queries to pending or send pending to be executed as available
 			select {
@@ -48,11 +60,19 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize in
 				pendingBatch.addToBatch(incomingQuery)
 			case batcher.ready <- pendingBatch:
 				pendingBatch = batch[KEY_TYPE, VALUE_TYPE]{}
+			case <-batcher.ctx.Done():
+				batcher.cleanup()
+				return
 			}
 		} else {
 			// if current batch is at capacity, just wait for a current query to finish before starting a new one
-			batcher.ready <- pendingBatch
-			pendingBatch = batch[KEY_TYPE, VALUE_TYPE]{}
+			select {
+			case batcher.ready <- pendingBatch:
+				pendingBatch = batch[KEY_TYPE, VALUE_TYPE]{}
+			case <-batcher.ctx.Done():
+				batcher.cleanup()
+				return
+			}
 		}
 	}
 }
@@ -68,7 +88,11 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) makeRequests(getter Getter[KE
 	}, maxConcurrentBatches)
 }
 
-// func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) Close() {
-// 	close(batcher.incoming)
-// 	close(batcher.ready)
-// }
+func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) Close() {
+	batcher.canceller()
+}
+
+func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) cleanup() {
+	close(batcher.incoming)
+	close(batcher.ready)
+}

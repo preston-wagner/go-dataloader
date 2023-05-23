@@ -32,7 +32,7 @@ func alwaysFailGetter(input []string) (map[string]string, map[string]error) {
 
 func TestQueryBatcherSuccess(t *testing.T) {
 	batcher := NewQueryBatcher(alwaysSucceedGetter, 3, 10)
-	// defer batcher.Close()
+	defer batcher.Close()
 
 	key := "lorem"
 	result, err := batcher.Load(key)
@@ -46,7 +46,7 @@ func TestQueryBatcherSuccess(t *testing.T) {
 
 func TestQueryBatcherFail(t *testing.T) {
 	batcher := NewQueryBatcher(alwaysFailGetter, 3, 10)
-	// defer batcher.Close()
+	defer batcher.Close()
 
 	key := "lorem"
 	_, err := batcher.Load(key)
