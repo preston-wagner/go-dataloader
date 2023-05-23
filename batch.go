@@ -26,7 +26,7 @@ func (btch batch[KEY_TYPE, VALUE_TYPE]) resolveAll(values map[KEY_TYPE]VALUE_TYP
 		} else if err, ok := errs[key]; ok {
 			btch.rejectKey(key, err)
 		} else {
-			btch.rejectKey(key, errMissingResponse)
+			btch.rejectKey(key, ErrMissingResponse)
 		}
 	}
 }

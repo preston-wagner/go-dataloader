@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var errMissingResponse = errors.New("pending task timed out")
+var ErrMissingResponse = errors.New("pending task timed out")
 
 type GetterPanicError struct {
 	recovered any
