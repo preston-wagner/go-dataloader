@@ -82,7 +82,6 @@ func TestQueryBatcherSuccessMany(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 
-	// due to the intricacies of goroutines and channels, as well as the speed of the actual hardware, the theoretical best-case performance of 4 calls may not always be reached
 	if calls > (maxCalls / 5) { // 6
 		t.Fatal("QueryBatcher did not batch the queries, made", calls, "calls")
 	}
@@ -119,7 +118,7 @@ func TestQueryBatcherSuccessMultithread(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 
-	if calls > (maxCalls / 2) {
+	if calls > (maxCalls / 4) {
 		t.Fatal("QueryBatcher did not batch the queries, made", calls, "calls")
 	}
 

@@ -49,6 +49,8 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize in
 		panic("maxBatchSize must be > 0!")
 	}
 	pendingBatch := batch[KEY_TYPE, VALUE_TYPE]{}
+
+loop:
 	for {
 		if len(pendingBatch) == 0 {
 			// if current batch is empty, just wait on new queries
@@ -64,11 +66,15 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize in
 			select {
 			case incomingQuery := <-batcher.incoming:
 				pendingBatch.addToBatch(incomingQuery)
-			case batcher.ready <- pendingBatch:
-				pendingBatch = batch[KEY_TYPE, VALUE_TYPE]{}
-			case <-batcher.ctx.Done():
-				batcher.cleanup()
-				return
+				continue loop // we prioritize emptying the incoming channel over sending new batches to the ready channel
+			default: // makes the above read non-blocking
+				select {
+				case batcher.ready <- pendingBatch:
+					pendingBatch = batch[KEY_TYPE, VALUE_TYPE]{}
+				case <-batcher.ctx.Done():
+					batcher.cleanup()
+					return
+				}
 			}
 		} else {
 			// if current batch is at capacity, just wait for a current query to finish before starting a new one
