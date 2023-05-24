@@ -40,7 +40,6 @@ func deduplicationTester[KEY_TYPE comparable, VALUE_TYPE any](t *testing.T, gett
 	}
 }
 
-// starting multiple docker containers would be overkill, this re-uses one
 func TestGormGetter(t *testing.T) {
 	container, connectURL := dockerdb.SetupSuite()
 	defer dockerdb.StopContainer(container)
