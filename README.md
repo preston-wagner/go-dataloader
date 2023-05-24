@@ -3,7 +3,7 @@ Inspired by https://www.npmjs.com/package/dataloader, this is a generic utility 
 
 ## QueryBatcher usage
 ```go
-func getUsers(userIds []string) (map[string]User, map[string]error){
+func getUsers(userIds []string) (map[string]User, map[string]error) {
   ...
 }
 
