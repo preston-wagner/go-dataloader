@@ -1,6 +1,7 @@
 package gormLoader
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/nuvi/go-dockerdb"
@@ -28,7 +29,9 @@ func getCol1(tst TestTable) int {
 
 func deduplicationTester[KEY_TYPE comparable, VALUE_TYPE any](t *testing.T, getter dataloader.Getter[KEY_TYPE, VALUE_TYPE]) dataloader.Getter[KEY_TYPE, VALUE_TYPE] {
 	calledKeys := unicycle.Set[KEY_TYPE]{}
+	lock := &sync.RWMutex{}
 	return func(keys []KEY_TYPE) (map[KEY_TYPE]VALUE_TYPE, map[KEY_TYPE]error) {
+		lock.Lock()
 		for _, key := range keys {
 			if calledKeys.Has(key) {
 				t.Error("deduplicationTester found that key", key, "was passed to a getter more than once!")
@@ -36,6 +39,7 @@ func deduplicationTester[KEY_TYPE comparable, VALUE_TYPE any](t *testing.T, gett
 				calledKeys.Add(key)
 			}
 		}
+		lock.Unlock()
 		return getter(keys)
 	}
 }
