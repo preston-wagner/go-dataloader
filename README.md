@@ -19,3 +19,29 @@ QueryBatcher's name says it all: it represents a pool that limits the number and
 
 ## DataLoader usage
 DataLoader is functionally the same as QueryBatcher, but with an added cache to prevent repeating calls after they've already been made.
+
+## gorm
+For convenience, there are also the `GormGetter` and `GormListGetter` functions, which simplify lookups in databases managed by gorm.io/gorm
+```go
+type User struct {
+	ID   string `gorm:"primaryKey"`
+	Name string // not unique
+  ...
+}
+
+userLoader := dataloader.NewDataLoader(
+  GormGetter(db, "id", func (usr User) string { return usr.ID }),
+  maxConcurrentBatches,
+  maxBatchSize,
+)
+
+user, err := batcher.Load("user-id-0001")
+
+usersByNameLoader := dataloader.NewDataLoader(
+  GormListGetter(db, "name", func (tst User) string { return usr.Name }),
+  maxConcurrentBatches,
+  maxBatchSize,
+)
+
+users, err := batcher.Load("bob")
+```
