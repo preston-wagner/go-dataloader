@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      GOPROXY: "https://proxy.golang.org,direct"
+
+    steps:
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: install staticcheck
+        run: |
+          cd /tmp && go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
+
+      - name: test
+        env:
+          GOFLAGS: -mod=vendor
+        run: |
+          go test
