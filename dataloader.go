@@ -3,7 +3,7 @@ package dataloader
 import (
 	"sync"
 
-	"github.com/preston-wagner/unicycle"
+	"github.com/nuvi/unicycle"
 )
 
 type DataLoader[KEY_TYPE comparable, VALUE_TYPE any] struct {

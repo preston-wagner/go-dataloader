@@ -4,9 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/nuvi/go-dataloader"
 	"github.com/nuvi/go-dockerdb"
-	"github.com/preston-wagner/go-dataloader"
-	"github.com/preston-wagner/unicycle"
+	"github.com/nuvi/unicycle"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

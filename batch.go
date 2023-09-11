@@ -1,7 +1,7 @@
 package dataloader
 
 import (
-	"github.com/preston-wagner/unicycle"
+	"github.com/nuvi/unicycle"
 )
 
 type query[KEY_TYPE comparable, VALUE_TYPE any] struct {

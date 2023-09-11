@@ -128,6 +128,9 @@ github.com/morikuni/aec
 # github.com/nuvi/go-dockerdb v0.0.0-20230227224549-1fcd59c208de
 ## explicit; go 1.19
 github.com/nuvi/go-dockerdb
+# github.com/nuvi/unicycle v0.4.5
+## explicit; go 1.20
+github.com/nuvi/unicycle
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
@@ -144,9 +147,6 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/preston-wagner/unicycle v0.2.4
-## explicit; go 1.19
-github.com/preston-wagner/unicycle
 # github.com/sirupsen/logrus v1.9.0
 ## explicit; go 1.13
 github.com/sirupsen/logrus
