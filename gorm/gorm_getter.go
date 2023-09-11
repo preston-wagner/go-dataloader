@@ -1,8 +1,8 @@
 package gormLoader
 
 import (
-	"github.com/preston-wagner/go-dataloader"
-	"github.com/preston-wagner/unicycle"
+	"github.com/nuvi/go-dataloader"
+	"github.com/nuvi/unicycle"
 	"gorm.io/gorm"
 )
 
