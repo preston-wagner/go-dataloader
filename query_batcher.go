@@ -3,7 +3,9 @@ package dataloader
 import (
 	"context"
 
-	"github.com/preston-wagner/unicycle"
+	"github.com/preston-wagner/unicycle/maps"
+	"github.com/preston-wagner/unicycle/multithread"
+	"github.com/preston-wagner/unicycle/promises"
 )
 
 // A getter function accepts a list of de-duplicated keys, and returns a pair of maps from keys to values (for successful lookups) and keys to errors (for unsuccessful lookups)
@@ -33,8 +35,8 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) Load(key KEY_TYPE) (VALUE_TYP
 	return batcher.LoadPromise(key).Await()
 }
 
-func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) LoadPromise(key KEY_TYPE) *unicycle.Promise[VALUE_TYPE] {
-	promise := unicycle.NewPromise[VALUE_TYPE]()
+func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) LoadPromise(key KEY_TYPE) *promises.Promise[VALUE_TYPE] {
+	promise := promises.NewPromise[VALUE_TYPE]()
 	go func() {
 		batcher.incoming <- query[KEY_TYPE, VALUE_TYPE]{
 			key:     key,
@@ -90,13 +92,13 @@ func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) batchRequests(maxBatchSize in
 }
 
 func (batcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]) makeRequests(getter Getter[KEY_TYPE, VALUE_TYPE], maxConcurrentBatches int) {
-	unicycle.ChannelForEachMultithread(batcher.ready, func(btch batch[KEY_TYPE, VALUE_TYPE]) {
+	multithread.ChannelForEachMultithread(batcher.ready, func(btch batch[KEY_TYPE, VALUE_TYPE]) {
 		defer func() {
 			if r := recover(); r != nil {
 				btch.rejectAll(GetterPanicError{recovered: r})
 			}
 		}()
-		btch.resolveAll(getter(unicycle.Keys(btch)))
+		btch.resolveAll(getter(maps.Keys(btch)))
 	}, maxConcurrentBatches)
 }
 

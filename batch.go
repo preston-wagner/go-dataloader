@@ -1,20 +1,21 @@
 package dataloader
 
 import (
-	"github.com/preston-wagner/unicycle"
+	"github.com/preston-wagner/unicycle/defaults"
+	"github.com/preston-wagner/unicycle/promises"
 )
 
 type query[KEY_TYPE comparable, VALUE_TYPE any] struct {
 	key     KEY_TYPE
-	promise *unicycle.Promise[VALUE_TYPE]
+	promise *promises.Promise[VALUE_TYPE]
 }
 
-type batch[KEY_TYPE comparable, VALUE_TYPE any] map[KEY_TYPE][]*unicycle.Promise[VALUE_TYPE]
+type batch[KEY_TYPE comparable, VALUE_TYPE any] map[KEY_TYPE][]*promises.Promise[VALUE_TYPE]
 
 func (btch batch[KEY_TYPE, VALUE_TYPE]) addToBatch(incomingQuery query[KEY_TYPE, VALUE_TYPE]) {
 	_, ok := btch[incomingQuery.key]
 	if !ok {
-		btch[incomingQuery.key] = []*unicycle.Promise[VALUE_TYPE]{}
+		btch[incomingQuery.key] = []*promises.Promise[VALUE_TYPE]{}
 	}
 	btch[incomingQuery.key] = append(btch[incomingQuery.key], incomingQuery.promise)
 }
@@ -39,7 +40,7 @@ func (btch batch[KEY_TYPE, VALUE_TYPE]) resolveKey(key KEY_TYPE, value VALUE_TYP
 
 func (btch batch[KEY_TYPE, VALUE_TYPE]) rejectKey(key KEY_TYPE, err error) {
 	for _, promise := range btch[key] {
-		promise.Resolve(unicycle.ZeroValue[VALUE_TYPE](), err)
+		promise.Resolve(defaults.ZeroValue[VALUE_TYPE](), err)
 	}
 }
 

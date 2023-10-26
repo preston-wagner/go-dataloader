@@ -3,19 +3,19 @@ package dataloader
 import (
 	"sync"
 
-	"github.com/preston-wagner/unicycle"
+	"github.com/preston-wagner/unicycle/promises"
 )
 
 type DataLoader[KEY_TYPE comparable, VALUE_TYPE any] struct {
 	queryBatcher *QueryBatcher[KEY_TYPE, VALUE_TYPE]
-	promiseCache map[KEY_TYPE]*unicycle.Promise[VALUE_TYPE]
+	promiseCache map[KEY_TYPE]*promises.Promise[VALUE_TYPE]
 	lock         *sync.RWMutex
 }
 
 func NewDataLoader[KEY_TYPE comparable, VALUE_TYPE any](getter Getter[KEY_TYPE, VALUE_TYPE], maxConcurrentBatches, maxBatchSize int) *DataLoader[KEY_TYPE, VALUE_TYPE] {
 	return &DataLoader[KEY_TYPE, VALUE_TYPE]{
 		queryBatcher: NewQueryBatcher(getter, maxConcurrentBatches, maxBatchSize),
-		promiseCache: map[KEY_TYPE]*unicycle.Promise[VALUE_TYPE]{},
+		promiseCache: map[KEY_TYPE]*promises.Promise[VALUE_TYPE]{},
 		lock:         &sync.RWMutex{},
 	}
 }
@@ -24,7 +24,7 @@ func (dataLoader *DataLoader[KEY_TYPE, VALUE_TYPE]) Load(key KEY_TYPE) (VALUE_TY
 	return dataLoader.LoadPromise(key).Await()
 }
 
-func (dataLoader *DataLoader[KEY_TYPE, VALUE_TYPE]) LoadPromise(key KEY_TYPE) *unicycle.Promise[VALUE_TYPE] {
+func (dataLoader *DataLoader[KEY_TYPE, VALUE_TYPE]) LoadPromise(key KEY_TYPE) *promises.Promise[VALUE_TYPE] {
 	dataLoader.lock.RLock()
 	promise, ok := dataLoader.promiseCache[key]
 	dataLoader.lock.RUnlock()

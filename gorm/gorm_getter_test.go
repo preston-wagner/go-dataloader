@@ -6,7 +6,9 @@ import (
 
 	"github.com/nuvi/go-dockerdb"
 	"github.com/preston-wagner/go-dataloader"
-	"github.com/preston-wagner/unicycle"
+	"github.com/preston-wagner/unicycle/multithread"
+	"github.com/preston-wagner/unicycle/promises"
+	"github.com/preston-wagner/unicycle/sets"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,7 +30,7 @@ func getCol1(tst TestTable) int {
 }
 
 func deduplicationTester[KEY_TYPE comparable, VALUE_TYPE any](t *testing.T, getter dataloader.Getter[KEY_TYPE, VALUE_TYPE]) dataloader.Getter[KEY_TYPE, VALUE_TYPE] {
-	calledKeys := unicycle.Set[KEY_TYPE]{}
+	calledKeys := sets.Set[KEY_TYPE]{}
 	lock := &sync.RWMutex{}
 	return func(keys []KEY_TYPE) (map[KEY_TYPE]VALUE_TYPE, map[KEY_TYPE]error) {
 		lock.Lock()
@@ -88,7 +90,7 @@ func TestGormGetter(t *testing.T) {
 	_, err = gormLoader.Load("n/a")
 	assert.ErrorIs(t, err, dataloader.ErrMissingResponse)
 
-	unicycle.ForEachMultithread([]TestTable{
+	multithread.ForEachMultithread([]TestTable{
 		item1,
 		item2,
 		item3,
@@ -106,8 +108,8 @@ func TestGormGetter(t *testing.T) {
 	// test list lookups
 	gormListLoader := dataloader.NewDataLoader(deduplicationTester(t, GormListGetter(db, "col1", getCol1)), 2, 10)
 
-	unicycle.AwaitAll(
-		unicycle.WrapInPromise(func() (bool, error) {
+	promises.AwaitAll(
+		promises.WrapInPromise(func() (bool, error) {
 			items, err := gormListLoader.Load(7)
 			if err != nil {
 				t.Fatal(err)
@@ -118,7 +120,7 @@ func TestGormGetter(t *testing.T) {
 			}
 			return true, nil
 		}),
-		unicycle.WrapInPromise(func() (bool, error) {
+		promises.WrapInPromise(func() (bool, error) {
 			items, err := gormListLoader.Load(8)
 			if err != nil {
 				t.Fatal(err)

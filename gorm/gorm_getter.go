@@ -2,7 +2,7 @@ package gormLoader
 
 import (
 	"github.com/preston-wagner/go-dataloader"
-	"github.com/preston-wagner/unicycle"
+	"github.com/preston-wagner/unicycle/slices"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +14,7 @@ func GormGetter[KEY_TYPE comparable, VALUE_TYPE any](db *gorm.DB, columnName str
 		if result.Error != nil {
 			return nil, dataloader.ErrForAll(keys, result.Error)
 		}
-		return unicycle.KeyBy(values, keyGetter), nil
+		return slices.KeyBy(values, keyGetter), nil
 	}
 }
 
@@ -26,6 +26,6 @@ func GormListGetter[KEY_TYPE comparable, VALUE_TYPE any](db *gorm.DB, columnName
 		if result.Error != nil {
 			return nil, dataloader.ErrForAll(keys, result.Error)
 		}
-		return dataloader.FillEmpty(keys, unicycle.GroupBy(values, keyGetter)), nil
+		return dataloader.FillEmpty(keys, slices.GroupBy(values, keyGetter)), nil
 	}
 }
