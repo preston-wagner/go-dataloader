@@ -146,7 +146,6 @@ github.com/pkg/errors
 github.com/pmezard/go-difflib/difflib
 # github.com/preston-wagner/unicycle v0.7.2
 ## explicit; go 1.20
-github.com/preston-wagner/unicycle
 github.com/preston-wagner/unicycle/channels
 github.com/preston-wagner/unicycle/defaults
 github.com/preston-wagner/unicycle/maps
